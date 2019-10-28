@@ -12,7 +12,7 @@ def get_db():
 
     return db
 
-def getQuote():
+def get_random_quote():
     MAX_NUMBER = 10
     t = random.randint(1, MAX_NUMBER)
     print(t)
@@ -38,11 +38,11 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return "Hello World!"
 
-@app.route('/getQuote')
+@app.route('/randquote')
 def solve():
-    response = getQuote()
+    response = get_random_quote()
     print(response)
     return jsonify({
         'result': response,
