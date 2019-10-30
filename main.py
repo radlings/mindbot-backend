@@ -1,4 +1,3 @@
-from config import firebase_config
 import firebase_admin
 from firebase_admin import db
 from firebase_admin import firestore
@@ -25,9 +24,7 @@ This will store application default credentials on your local machine.
 https://firebase.google.com/docs/admin/setup/
 """
 
-def get_random_quote():
-    config = firebase_config
-    
+def get_random_quote():    
     # We may need this for GAE deployment. Leave this for now.
     # app_default = credentials.ApplicationDefault()
     # app_default_credential = app_default.get_credential()
