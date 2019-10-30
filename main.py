@@ -1,24 +1,42 @@
+from config import firebase_config
+import firebase_admin
+from firebase_admin import db
+from firebase_admin import firestore
+# from firebase_admin import credentials
 import random
 
-from config import firebase_config
 
-def get_db():
-    import pyrebase
+options = {
+    'authDomain': "radlings.firebaseapp.com",
+    'databaseURL': "https://radlings.firebaseio.com",
+    'projectId': "radlings",
+    'storageBucket': "radlings.appspot.com",
+    'appId': "1:921916311052:web:a423832616acbb93bd5029"
+}
 
-    config = firebase_config
+# This must only be called once.
+app = firebase_admin.initialize_app(options=options)
 
-    firebase = pyrebase.initialize_app(config)
-    db = firebase.database()
 
-    return db
+"""Get a random quote from Firebase Realtime Database
+Run ``gcloud auth application-default login`` in your shell first! 
+This will store application default credentials on your local machine.
+
+https://firebase.google.com/docs/admin/setup/
+"""
 
 def get_random_quote():
+    config = firebase_config
+    
+    # We may need this for GAE deployment. Leave this for now.
+    # app_default = credentials.ApplicationDefault()
+    # app_default_credential = app_default.get_credential()
+
     MAX_NUMBER = 10
     t = random.randint(1, MAX_NUMBER)
     print(t)
 
-    db = get_db()
-    quotes = db.child('quotes').get().val()
+    quotes = db.reference('quotes').get()
 
     cont = 1
     for k, v in quotes.items():
@@ -29,7 +47,7 @@ def get_random_quote():
     return None
 
 
-# --------- Flask Code begin --------- #
+# --------- Flask Code begins --------- #
 
 #!flask/bin/python
 from flask import Flask, jsonify
