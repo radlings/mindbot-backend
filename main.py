@@ -1,5 +1,6 @@
 import firebase_admin
 from firebase_admin import db
+from firebase_admin import exceptions
 import random
 
 
@@ -46,6 +47,7 @@ def get_random_quote():
 
 #!flask/bin/python
 from flask import Flask, jsonify
+from flask import abort
 
 app = Flask(__name__)
 
@@ -55,12 +57,26 @@ def index():
 
 @app.route('/randquote')
 def solve():
-    response = get_random_quote()
-    print(response)
+    try:
+        response = get_random_quote()
+        print(response)
+        return jsonify({
+            'result': response,
+            'status': 'ok',
+            'code': 200
+        })
+    except ValueError as val_err:
+        print("[*] Db reference error")
+        abort(500)
+
+    except exceptions.FirebaseError as firebase_err:
+        print("[*] Firebase error code {} caused by {}".format(firebase_err.code(), firebase_err.cause()))
+        abort(500)
+    
     return jsonify({
-        'result': response,
-        'status': 'ok',
-        'code': 200
+        'result': {},
+        'status': 'internal server error',
+        'code': 500
     })
 
 
