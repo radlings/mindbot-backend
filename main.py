@@ -46,8 +46,7 @@ def get_random_quote():
 # --------- Flask Code begins --------- #
 
 #!flask/bin/python
-from flask import Flask, jsonify
-from flask import abort
+from flask import abort, Flask, jsonify
 
 app = Flask(__name__)
 
