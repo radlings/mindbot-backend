@@ -3,7 +3,6 @@ from firebase_admin import db
 from firebase_admin import exceptions
 import random
 
-
 options = {
     'authDomain': "radlings.firebaseapp.com",
     'databaseURL': "https://radlings.firebaseio.com",
@@ -15,7 +14,6 @@ options = {
 # This must only be called once.
 app = firebase_admin.initialize_app(options=options)
 
-
 """Get a random quote from Firebase Realtime Database
 Run ``gcloud auth application-default login`` in your shell first! 
 This will store application default credentials on your local machine.
@@ -23,7 +21,8 @@ This will store application default credentials on your local machine.
 https://firebase.google.com/docs/admin/setup/
 """
 
-def get_random_quote():    
+
+def get_random_quote():
     # We may need this for GAE deployment. Leave this for now.
     # app_default = credentials.ApplicationDefault()
     # app_default_credential = app_default.get_credential()
@@ -45,14 +44,16 @@ def get_random_quote():
 
 # --------- Flask Code begins --------- #
 
-#!flask/bin/python
+# !flask/bin/python
 from flask import abort, Flask, jsonify
 
 app = Flask(__name__)
 
+
 @app.route('/')
 def index():
     return "Hello World!"
+
 
 @app.route('/randquote')
 def solve():
@@ -71,7 +72,7 @@ def solve():
     except exceptions.FirebaseError as firebase_err:
         print("[*] Firebase error code {} caused by {}".format(firebase_err.code(), firebase_err.cause()))
         abort(500)
-    
+
     return jsonify({
         'result': {},
         'status': 'internal server error',
