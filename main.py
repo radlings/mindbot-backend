@@ -64,6 +64,9 @@ def get_category_list():
 
     return categ_list
 
+def add_resouce_to_db():
+    return None
+
 
 # --------- Flask Code begins --------- #
 
@@ -79,7 +82,7 @@ def index():
 
 
 @app.route('/randquote')
-def solve():
+def quote_route():
     try:
         response = get_random_quote()
         logging.info(response)
@@ -106,9 +109,32 @@ def solve():
 
 
 @app.route('/categories', methods = ['GET'])
-def categoryRoute():
+def category_route():
     try:
         response = get_category_list()
+        result = jsonify({
+            'result': response,
+            'success': True,
+            'status': 'ok',
+            'code': 200
+        })
+
+    except Exception as e:
+        result = jsonify({
+            'result': None,
+            'success': False,
+            'status': str(e),
+            'code': 500
+        })
+
+    result.headers.add('Access-Control-Allow-Origin', '*')
+    return result
+
+
+@app.route('/add_resource', methods = ['POST'])
+def add_resource_route():
+    try:
+        response = add_resouce_to_db()
         result = jsonify({
             'result': response,
             'success': True,
