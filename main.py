@@ -1,10 +1,19 @@
-import firebase_admin
-from firebase_admin import db
-from firebase_admin import exceptions
 import random
+import logging
 
+from google.cloud import firestore
 
-options = {
+FORMAT = "[*] %(asctime)15s - [%(levelname)s] - %(message)s"
+logging.basicConfig(
+    level=logging.INFO,
+    format=FORMAT,
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+
+OPTIONS = {
     'authDomain': "radlings.firebaseapp.com",
     'databaseURL': "https://radlings.firebaseio.com",
     'projectId': "radlings",
@@ -13,8 +22,6 @@ options = {
 }
 
 # This must only be called once.
-app = firebase_admin.initialize_app(options=options)
-
 
 """Get a random quote from Firebase Realtime Database
 Run ``gcloud auth application-default login`` in your shell first! 
@@ -23,7 +30,8 @@ This will store application default credentials on your local machine.
 https://firebase.google.com/docs/admin/setup/
 """
 
-def get_random_quote():    
+
+def get_random_quote():
     # We may need this for GAE deployment. Leave this for now.
     # app_default = credentials.ApplicationDefault()
     # app_default_credential = app_default.get_credential()
@@ -32,12 +40,13 @@ def get_random_quote():
     t = random.randint(1, MAX_NUMBER)
     print(t)
 
-    quotes = db.reference('quotes').get()
+    db = firestore.Client()
+    quotes_docs = db.collection(u"quotes").stream()
 
     cont = 1
-    for k, v in quotes.items():
+    for quote in quotes_docs:
         if cont == t:
-            return v
+            return quote.to_dict()
         cont += 1
 
     return None
@@ -45,38 +54,39 @@ def get_random_quote():
 
 # --------- Flask Code begins --------- #
 
-#!flask/bin/python
+# !flask/bin/python
 from flask import abort, Flask, jsonify
 
 app = Flask(__name__)
+
 
 @app.route('/')
 def index():
     return "Hello World!"
 
+
 @app.route('/randquote')
 def solve():
     try:
         response = get_random_quote()
-        print(response)
+        logging.info(response)
+
         return jsonify({
             'result': response,
+            'success': True,
             'status': 'ok',
             'code': 200
         })
-    except ValueError as val_err:
-        print("[*] Db reference error")
-        abort(500)
 
-    except exceptions.FirebaseError as firebase_err:
-        print("[*] Firebase error code {} caused by {}".format(firebase_err.code(), firebase_err.cause()))
-        abort(500)
-    
-    return jsonify({
-        'result': {},
-        'status': 'internal server error',
-        'code': 500
-    })
+    except Exception as err:
+        logging.exception("Could not get a random quote.")
+
+        return jsonify({
+            'result': {},
+            'success': False,
+            'status': 'internal server error',
+            'code': 500  # TODO give a specific message (error code)
+        })
 
 
 if __name__ == '__main__':
