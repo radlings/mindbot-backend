@@ -15,6 +15,8 @@ logging.basicConfig(
     ]
 )
 
+MAX_RESOURCES = 3
+
 # OPTIONS = {
 #     'authDomain': "radlings.firebaseapp.com",
 #     'databaseURL': "https://radlings.firebaseio.com",
@@ -54,15 +56,19 @@ def get_random_quote():
 
 
 def get_category_list():
-    categories = db.collection("categories").stream()
+    try:
+        categories = db.collection("categories").stream()
 
-    categ_list = []
+        categ_list = []
 
-    for categ in categories:
-        print(categ.id)
-        categ_list.append(categ.id)
+        for categ in categories:
+            print(categ.id)
+            categ_list.append(categ.id)
 
-    return categ_list
+        return categ_list
+    except Exception as e:
+        print(str(e))
+        return []
 
 def add_resouce_to_db(rdata):
     try:
@@ -84,6 +90,30 @@ def add_resouce_to_db(rdata):
     except Exception as e:
         print(str(e))
         return 'Not Done'
+
+
+def get_resource(categ):    # 3 resources
+    try:
+        resources = db.collection('all_resources').document(categ).collection('resources').stream()
+        all_resources = []
+
+        for res in resources:
+            res_data = res.to_dict()
+            tmp = {
+                'title': res_data['title'],
+                'description': res_data['description'],
+                'source': res_data['source'],
+                'url': res_data['url'],
+                'helpful': res_data['helpful']
+            }
+            all_resources.append(tmp)
+
+        sample_resources = random.sample(all_resources, min(MAX_RESOURCES, len(all_resources)))
+        return sample_resources
+
+    except Exception as e:
+        print(str(e))
+        return []
 
 
 # --------- Flask Code begins --------- #
@@ -154,6 +184,33 @@ def add_resource_route():
     try:
         rdata = dict(request.get_json())
         response = add_resouce_to_db(rdata)
+
+        result = jsonify({
+            'result': response,
+            'success': True,
+            'status': 'ok',
+            'code': 200
+        })
+
+    except Exception as e:
+        result = jsonify({
+            'result': None,
+            'success': False,
+            'status': str(e),
+            'code': 500
+        })
+
+    result.headers.add('Access-Control-Allow-Origin', '*')
+    return result
+
+
+@app.route('/fetch_resource', methods = ['GET'])
+def fetch_resource_route():
+    try:
+        tmp = dict(request.args)
+        categ = tmp['category']
+
+        response = get_resource(categ)
 
         result = jsonify({
             'result': response,
