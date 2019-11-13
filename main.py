@@ -3,6 +3,8 @@ import logging
 
 from google.cloud import firestore
 
+db = firestore.Client()
+
 FORMAT = "[*] %(asctime)15s - [%(levelname)s] - %(message)s"
 logging.basicConfig(
     level=logging.INFO,
@@ -13,13 +15,13 @@ logging.basicConfig(
     ]
 )
 
-OPTIONS = {
-    'authDomain': "radlings.firebaseapp.com",
-    'databaseURL': "https://radlings.firebaseio.com",
-    'projectId': "radlings",
-    'storageBucket': "radlings.appspot.com",
-    'appId': "1:921916311052:web:a423832616acbb93bd5029"
-}
+# OPTIONS = {
+#     'authDomain': "radlings.firebaseapp.com",
+#     'databaseURL': "https://radlings.firebaseio.com",
+#     'projectId': "radlings",
+#     'storageBucket': "radlings.appspot.com",
+#     'appId': "1:921916311052:web:a423832616acbb93bd5029"
+# }
 
 # This must only be called once.
 
@@ -40,7 +42,6 @@ def get_random_quote():
     t = random.randint(1, MAX_NUMBER)
     print(t)
 
-    db = firestore.Client()
     quotes_docs = db.collection(u"quotes").stream()
 
     cont = 1
@@ -52,10 +53,43 @@ def get_random_quote():
     return None
 
 
+def get_category_list():
+    categories = db.collection("categories").stream()
+
+    categ_list = []
+
+    for categ in categories:
+        print(categ.id)
+        categ_list.append(categ.id)
+
+    return categ_list
+
+def add_resouce_to_db(rdata):
+    try:
+        category = rdata['category']
+        tmp_json = {
+            'title': rdata['title'],
+            'description': rdata['description'],
+            'source': rdata['source'],
+            'url': rdata['url'],
+            'helpful': 0,
+            'not_helpful': 0,
+            'impressions': 0,
+            'discovery': 0 
+        }
+
+        doc_ref = db.collection('all_resources').document(category).collection('resources').document()
+        doc_ref.set(tmp_json)
+        return 'Done'
+    except Exception as e:
+        print(str(e))
+        return 'Not Done'
+
+
 # --------- Flask Code begins --------- #
 
 # !flask/bin/python
-from flask import abort, Flask, jsonify
+from flask import abort, Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -66,27 +100,78 @@ def index():
 
 
 @app.route('/randquote')
-def solve():
+def quote_route():
     try:
         response = get_random_quote()
         logging.info(response)
 
-        return jsonify({
+        result = jsonify({
             'result': response,
             'success': True,
             'status': 'ok',
             'code': 200
         })
 
-    except Exception as err:
+    except Exception as e:
         logging.exception("Could not get a random quote.")
 
-        return jsonify({
+        result = jsonify({
             'result': {},
             'success': False,
-            'status': 'internal server error',
-            'code': 500  # TODO give a specific message (error code)
+            'status': str(e),
+            'code': 500
         })
+
+    result.headers.add('Access-Control-Allow-Origin', '*')
+    return result
+
+
+@app.route('/categories', methods = ['GET'])
+def category_route():
+    try:
+        response = get_category_list()
+        result = jsonify({
+            'result': response,
+            'success': True,
+            'status': 'ok',
+            'code': 200
+        })
+
+    except Exception as e:
+        result = jsonify({
+            'result': None,
+            'success': False,
+            'status': str(e),
+            'code': 500
+        })
+
+    result.headers.add('Access-Control-Allow-Origin', '*')
+    return result
+
+
+@app.route('/add_resource', methods = ['POST'])
+def add_resource_route():
+    try:
+        rdata = dict(request.get_json())
+        response = add_resouce_to_db(rdata)
+
+        result = jsonify({
+            'result': response,
+            'success': True,
+            'status': 'ok',
+            'code': 200
+        })
+
+    except Exception as e:
+        result = jsonify({
+            'result': None,
+            'success': False,
+            'status': str(e),
+            'code': 500
+        })
+
+    result.headers.add('Access-Control-Allow-Origin', '*')
+    return result
 
 
 if __name__ == '__main__':
