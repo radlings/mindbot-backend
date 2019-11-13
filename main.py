@@ -1,19 +1,9 @@
 import random
-import logging
+import sys
 
 from google.cloud import firestore
 
 db = firestore.Client()
-
-FORMAT = "[*] %(asctime)15s - [%(levelname)s] - %(message)s"
-logging.basicConfig(
-    level=logging.INFO,
-    format=FORMAT,
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
 
 MAX_RESOURCES = 3
 
@@ -25,7 +15,6 @@ MAX_RESOURCES = 3
 #     'appId': "1:921916311052:web:a423832616acbb93bd5029"
 # }
 
-# This must only be called once.
 
 """Get a random quote from Firebase Realtime Database
 Run ``gcloud auth application-default login`` in your shell first! 
@@ -67,8 +56,9 @@ def get_category_list():
 
         return categ_list
     except Exception as e:
-        print(str(e))
+        print("Could not get categories".format(e), file=sys.stderr)
         return []
+
 
 def add_resouce_to_db(rdata):
     try:
@@ -81,18 +71,18 @@ def add_resouce_to_db(rdata):
             'helpful': 0,
             'not_helpful': 0,
             'impressions': 0,
-            'discovery': 0 
+            'discovery': 0
         }
 
         doc_ref = db.collection('all_resources').document(category).collection('resources').document()
         doc_ref.set(tmp_json)
         return 'Done'
     except Exception as e:
-        print(str(e))
+        print("Could not add resource {}".format(str(e)), file=sys.stderr)
         return 'Not Done'
 
 
-def get_resource(categ):    # 3 resources
+def get_resource(categ):  # 3 resources
     try:
         resources = db.collection('all_resources').document(categ).collection('resources').stream()
         all_resources = []
@@ -112,7 +102,7 @@ def get_resource(categ):    # 3 resources
         return sample_resources
 
     except Exception as e:
-        print(str(e))
+        print("Could not get three resources. {}".format(e), file=sys.stderr)
         return []
 
 
@@ -133,7 +123,7 @@ def index():
 def quote_route():
     try:
         response = get_random_quote()
-        logging.info(response)
+        print(response)
 
         result = jsonify({
             'result': response,
@@ -143,7 +133,7 @@ def quote_route():
         })
 
     except Exception as e:
-        logging.exception("Could not get a random quote.")
+        print("Could not get a random quote. {}".format(e), file=sys.stderr)
 
         result = jsonify({
             'result': {},
@@ -156,7 +146,7 @@ def quote_route():
     return result
 
 
-@app.route('/categories', methods = ['GET'])
+@app.route('/categories', methods=['GET'])
 def category_route():
     try:
         response = get_category_list()
@@ -179,7 +169,7 @@ def category_route():
     return result
 
 
-@app.route('/add_resource', methods = ['POST'])
+@app.route('/add_resource', methods=['POST'])
 def add_resource_route():
     try:
         rdata = dict(request.get_json())
@@ -193,6 +183,7 @@ def add_resource_route():
         })
 
     except Exception as e:
+        print("Could not add a resource quote. {}".format(e), file=sys.stderr)
         result = jsonify({
             'result': None,
             'success': False,
@@ -204,7 +195,7 @@ def add_resource_route():
     return result
 
 
-@app.route('/fetch_resource', methods = ['GET'])
+@app.route('/fetch_resource', methods=['GET'])
 def fetch_resource_route():
     try:
         tmp = dict(request.args)
@@ -220,6 +211,7 @@ def fetch_resource_route():
         })
 
     except Exception as e:
+        print("Could not fetch a resource quote. {}".format(e), file=sys.stderr)
         result = jsonify({
             'result': None,
             'success': False,
