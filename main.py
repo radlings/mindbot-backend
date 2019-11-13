@@ -64,14 +64,32 @@ def get_category_list():
 
     return categ_list
 
-def add_resouce_to_db():
-    return None
+def add_resouce_to_db(rdata):
+    try:
+        category = rdata['category']
+        tmp_json = {
+            'title': rdata['title'],
+            'description': rdata['description'],
+            'source': rdata['source'],
+            'url': rdata['url'],
+            'helpful': 0,
+            'not_helpful': 0,
+            'impressions': 0,
+            'discovery': 0 
+        }
+
+        doc_ref = db.collection('all_resources').document(category).collection('resources').document()
+        doc_ref.set(tmp_json)
+        return 'Done'
+    except Exception as e:
+        print(str(e))
+        return 'Not Done'
 
 
 # --------- Flask Code begins --------- #
 
 # !flask/bin/python
-from flask import abort, Flask, jsonify
+from flask import abort, Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -134,7 +152,9 @@ def category_route():
 @app.route('/add_resource', methods = ['POST'])
 def add_resource_route():
     try:
-        response = add_resouce_to_db()
+        rdata = dict(request.get_json())
+        response = add_resouce_to_db(rdata)
+
         result = jsonify({
             'result': response,
             'success': True,
