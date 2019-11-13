@@ -21,5 +21,16 @@ and
 ```bash
 $ python main.py
 ```
-to test locally.
 
+To fetch the categories
+
+	Request Type - GET
+	End Point - /categories
+
+To fetch the resources
+	
+	Request Type - POST
+	End Point - /fetch_resource
+	params - {'category': <name_of_category>}
+
+to test locally.
